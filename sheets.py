@@ -19,7 +19,7 @@ class DraftLeagueSheets:
         self.league = self.config["leagues"][self.leagueId]
         self.sheet_id = self.league["sheet-id"]
         self.sheet = self.client.open_by_key(self.sheet_id)
-        self.playerCount = self.league['playerCount'] 
+        self.playerCount = self.league['player-count'] 
 
     def setRandomDraftOrder(self):
         draftSheetConfig = self.league["draft-sheet"]
@@ -179,6 +179,16 @@ class DraftLeagueSheets:
     def saveConfig(self):
         with open("config.json", "w") as json_file:
             json.dump(self.config, json_file, indent=4)
+            
+    def setSheet(self, sheet_id):
+        self.sheet_id = sheet_id
+        try:
+            self.sheet = self.client.open_by_key(self.sheet_id)
+        except Exception as e:
+            print(f'error: {e}')
+            return False
+        return True
+        
 """
 config = None
 

@@ -1,2 +1,4 @@
 /sheets
+/__pycache__
 *.json
+./tempCodeRunnerFile.py

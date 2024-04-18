@@ -29,7 +29,7 @@ async def send_message(message, user_message: str) -> None:
         user_message = user_message[1:]
         
     try:
-        response = get_response(user_message, draftBot)
+        response = get_response(message, draftBot)
         if response:
             await message.author.send(response) if is_private else await message.channel.send(response)
     except Exception as e:
@@ -48,7 +48,7 @@ async def on_message(message) -> None:
     user_message = message.content
     chennel = str(message.channel)
     
-    print(f'[{chennel}] {username}: "{user_message}"')
+    print(f'[{chennel}] {username}: "{user_message}", Mentions: {message.mentions}, Role Mentions: {message.role_mentions}, channel mentions:: {message.channel_mentions}')
     await send_message(message, user_message)
     
 def main() -> None:

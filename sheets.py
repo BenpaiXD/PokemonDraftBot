@@ -68,6 +68,20 @@ class DraftLeagueSheets:
         self.saveConfig()
         return startingPlayer
     
+    def setCoach(self, coachName, teamName, acr):
+        numCoaches = self.league['num-coaches']
+        dataSheetConfig = self.league["data-sheet"]
+        dataSheet = self.sheet.worksheet(dataSheetConfig["sheet-name"])
+        
+        coachesDF = self.getCoaches()
+        
+        mask = coachesDF['Coach Name'] == coachName
+        if mask.any():
+            id = coachesDF.loc[mask, 'ID.'].values[0]
+            return dataSheet.update([[coachName, teamName, acr]], f'C{id + 1}:E{id + 1}')
+        else:
+            return dataSheet.update([[coachName, teamName, acr]], f'C{numCoaches + 2}:E{numCoaches + 2}')
+
     
     def draft(self, pokemon):
         if not self.league["draft-enabled"]:
@@ -174,7 +188,7 @@ class DraftLeagueSheets:
         df["Pts."] = df['Pts.'].replace({"-": '0'})
         df['Pts.'] = df['Pts.'].astype(int)
         return df
-        
+
         
     def saveConfig(self):
         with open("config.json", "w") as json_file:
@@ -188,14 +202,13 @@ class DraftLeagueSheets:
             print(f'error: {e}')
             return False
         return True
-        
-"""
+
+
+
 config = None
 
 with open('config.json') as json_file:
     config = json.load(json_file)
     dls = DraftLeagueSheets(config)
-    # print(dls.getDraftOrder())
-    print(dls.draft("greninja"))
-    
-"""
+    #print(dls.getCoaches())
+    print(dls.setCoach("joe", "team1", 'tt1'))

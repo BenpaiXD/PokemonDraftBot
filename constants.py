@@ -2,11 +2,12 @@ CONFIG_FILE_NAME = 'config.json'
 
 CONFIG_PARAMS = {'sheet-id', 'player-count'}
 
-DEFAULT_LEAUGE = {
+DEFAULT_LEAUGE_CONFIG = {
     "sheet-id": None,
     "player-count": 14,
     "draft-enabled": True,
     "draft-turn-id": 14,
+    "num-coaches": 0,
     "budget": 120,
     "data-sheet": {
         "sheet-name": "Data",

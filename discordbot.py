@@ -1,7 +1,8 @@
 import json
-from discord import Intents, Client
+from discord import Intents, Client, File
 from responses import get_response
 from sheets import DraftLeagueSheets
+import traceback
 
 
 intents = Intents.default()
@@ -33,7 +34,8 @@ async def send_message(message, user_message: str) -> None:
         if response:
             await message.author.send(response) if is_private else await message.channel.send(response)
     except Exception as e:
-        print(e)
+        traceback.print_exc()
+        #print("Exception: " + str(e))
     
 @client.event
 async def on_ready() -> None:

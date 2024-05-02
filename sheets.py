@@ -39,7 +39,6 @@ class DraftLeagueSheets:
         
         draftSheet.update(f'{draftSheetConfig["draft-order-col"]}{orderStartRow}:{draftSheetConfig["draft-order-col"]}{orderStartRow + self.playerCount}', 
                           [[name] for name in draftOrder])
-        
         return draftOrder
     
     def columnToNumber(self, column_name):
@@ -80,16 +79,15 @@ class DraftLeagueSheets:
             id = coachesDF.loc[mask, 'ID.'].values[0]
             return dataSheet.update([[coachName, teamName, acr]], f'C{id + 1}:E{id + 1}')
         else:
-            return dataSheet.update([[coachName, teamName, acr]], f'C{numCoaches + 2}:E{numCoaches + 2}')
+            return dataSheet.update([[coachName, teamName, acr]], f'C{numCoaches + 1}:E{numCoaches + 1}')
 
     
-    def draft(self, pokemon):
-        if not self.league["draft-enabled"]:
-            return "Draft is not enabled"
+    def draft(self, pokemon, coachName, draftOrderIndex):
         
         # validing if player can draft specified pokemon
-        drafterId = self.league["draft-turn-id"]
         budget = self.league['budget']
+        
+        pokemon = pokemon.lower()
         
         drafted = self.getDrafted()
         dex = self.getPokedex()
@@ -98,24 +96,28 @@ class DraftLeagueSheets:
         drafted = pd.merge(drafted, coaches, on="Coach Name", how="inner")
         
         if pokemon in drafted['GitHub Name'].values:
-            return "Pokémon already drafted"
+            return False, "Pokémon already drafted"
         
-        drafterRows = drafted[drafted['ID.'] == drafterId]
+        drafterRows = drafted[drafted['Coach Name'] == coachName]
+        if len(drafterRows) >= 12:
+            return "Unable to draft the following pokemon, you already have 12 pokemon"
+       
         remainingPts = budget - drafterRows['Pts.'].sum()
         
         pokemonRow = dex[dex['GitHub Name'] == pokemon]
-        pkmnPoints = pokemonRow['Pts.'].item()
+        pkmnPoints = int(pokemonRow['Pts.'])
         pkmnName = pokemonRow['Pokemon'].item()
         
         if pokemonRow.empty:
-            return f"Invalid Pokémon name '{pokemon}' not found"
+            return False, f"unable to find '{pokemon}', I use pokemon's GitHub names to find them.  " + \
+                            "Usually that means their name all in lower case and replacing all spaces in their names with dashes (-).  " + \
+                            "If you are still unable to find it look in the Pokedex tab on the google sheet to see exactly what it is"
 
+        if pkmnPoints > 20:
+            return False, f"Unable to complete draft, {pokemon} is banned"
         if remainingPts < pkmnPoints: 
-            return f"Unable to complete draft, Remaining points: {remainingPts}, cost of Pokémon: {pokemonRow[0]['Pts.']}"
-        
-        coachName = coaches[coaches['ID.'] == drafterId]["Coach Name"].item()
-        draftOrder = self.getDraftOrder()
-                
+            return False, f"Unable to complete draft, Remaining points: {remainingPts}, cost of Pokémon: {pokemonRow[0]['Pts.']}"
+            
         # drafting the specified pokemon
         draftSheetConfig = self.league["draft-sheet"]
         cardsStart = draftSheetConfig["cards-start"]
@@ -127,7 +129,6 @@ class DraftLeagueSheets:
         draftSheet = self.sheet.worksheet(draftSheetConfig["sheet-name"])
         
         
-        draftOrderIndex = draftOrder.index(coachName)
         row = cardTop + len(drafterRows)
         col = cardsStart 
         
@@ -139,13 +140,7 @@ class DraftLeagueSheets:
         
         draftSheet.update_cell(row, col, pkmnName)
         
-        nextDrafter = coaches[coaches['Coach Name'] == draftOrder[(draftOrderIndex + 1) % self.playerCount]]
-        self.league['draft-turn-id'] = nextDrafter['ID.'].item()
-        nextDrafter['Coach Name']
-        
-        self.saveConfig()
-        
-        return f"Succesfully drafted {pkmnName}, you now have {remainingPts - pkmnPoints} points remaining\nNext player to draft is {nextDrafter['Coach Name'].item()}"
+        return True, f"Succesfully drafted {pkmnName}, you now have {remainingPts - pkmnPoints} points remaining\n"
     
     def getCoaches(self):
         dataSheetConfig = self.league["data-sheet"]
@@ -202,13 +197,25 @@ class DraftLeagueSheets:
             print(f'error: {e}')
             return False
         return True
+    
+    def setConfig(self, config, leagueName):
+        self.config = config
+        
+        self.leagueId = leagueName
+        self.league = self.config["leagues"][self.leagueId]
+        self.playerCount = self.league['player-count'] 
+        
+        if self.sheet_id != self.league["sheet-id"]:
+            self.sheet_id = self.league["sheet-id"]
+            self.sheet = self.client.open_by_key(self.sheet_id)
 
 
-
+"""
 config = None
-
 with open('config.json') as json_file:
     config = json.load(json_file)
     dls = DraftLeagueSheets(config)
     #print(dls.getCoaches())
-    print(dls.setCoach("joe", "team1", 'tt1'))
+    print(dls.getDraftOrder())
+
+"""
